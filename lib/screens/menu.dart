@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
-
+import 'package:myportofolio_mobile/widgets/left_drawer.dart';
+import 'package:myportofolio_mobile/screens/project_form.dart';
+import 'package:myportofolio_mobile/widgets/project_card.dart';
 
 class MyHomePage extends StatelessWidget {
   ///Main dashboard screen for the portofolio app.
@@ -16,9 +17,9 @@ class MyHomePage extends StatelessWidget {
   
   ///List of items to be displayed in the grid view, each represented by an [ItemHomepage] object.
   final List<ItemHomepage> items = [
-    ItemHomepage("View Projects", Icons.folder, Colors.blue),
-    ItemHomepage("Add Project", Icons.add_circle, Colors.green),
-    ItemHomepage("Logout", Icons.logout, Colors.red),
+    ItemHomepage("View Projects", Icons.folder, Color(0xFF0066FF)),
+    ItemHomepage("Add Project", Icons.add_circle, Color(0xFF0066FF)),
+    ItemHomepage("Logout", Icons.logout, Color(0xFF0066FF)),
   ];
   @override
   Widget build(BuildContext context) {
@@ -33,6 +34,7 @@ class MyHomePage extends StatelessWidget {
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
+      drawer: const LeftDrawer(),
       body: Padding(
         padding : const EdgeInsets.all(16.0),
         child: Column(
@@ -70,7 +72,7 @@ class MyHomePage extends StatelessWidget {
                     crossAxisCount: 3,
                     shrinkWrap: true,// Ensures the grid only takes up necessary space
                     // Dynamically maps the ItemHomepage data model to visual ItemCard widgets
-                    children: items.map((ItemHomepage item) {
+                    children: items.map<Widget>((ItemHomepage item) {
                       return ItemCard(item);
                     }).toList(),
                   ),
@@ -110,67 +112,6 @@ class InfoCard extends StatelessWidget {
             const SizedBox(height: 8.0),
             Text(content),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A reusable data model representing a single interactive menu item.
-/// 
-/// Holds the configuration for the button's display [name] and graphical [icon].
-class ItemHomepage {
-  final String name;
-  final IconData icon;
-  final Color color;
-
-  ItemHomepage(this.name, this.icon, this.color);
-}
-
-
-/// [ItemCard] is a reusable, interactive button widget.
-/// 
-/// It wraps an [ItemHomepage] configuration in an [InkWell] to provide 
-/// Material touch ripples and triggers a localized [SnackBar] notification 
-/// upon user interaction.
-class ItemCard extends StatelessWidget {
-  final ItemHomepage item;
-
-  const ItemCard(this.item, {super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: item.color,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(content: Text("You pressed the ${item.name} button!"))
-            );
-        },
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  item.icon,
-                  color: Colors.white,
-                  size: 30.0,
-                ),
-                const Padding(padding: EdgeInsets.all(3)),
-                Text(
-                  item.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
