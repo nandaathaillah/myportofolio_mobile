@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:myportofolio_mobile/widgets/left_drawer.dart';
-import 'package:myportofolio_mobile/screens/project_form.dart';
 import 'package:myportofolio_mobile/widgets/project_card.dart';
 
 class MyHomePage extends StatelessWidget {
@@ -17,9 +16,10 @@ class MyHomePage extends StatelessWidget {
   
   ///List of items to be displayed in the grid view, each represented by an [ItemHomepage] object.
   final List<ItemHomepage> items = [
-    ItemHomepage("View Projects", Icons.folder, Color(0xFF0066FF)),
-    ItemHomepage("Add Project", Icons.add_circle, Color(0xFF0066FF)),
-    ItemHomepage("Logout", Icons.logout, Color(0xFF0066FF)),
+    ItemHomepage("View Projects", Icons.folder, const Color(0xFF0066FF)),
+    ItemHomepage("Add Project", Icons.add_circle, const Color(0xFF0066FF)),
+    ItemHomepage("Add Experience", Icons.work, const Color(0xFF0066FF)),
+    ItemHomepage("Logout", Icons.logout, const Color(0xFF0066FF)),
   ];
   @override
   Widget build(BuildContext context) {

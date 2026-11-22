@@ -50,3 +50,31 @@ During this assignment, I used Google's Gemini :
 6. **Explain the concept of hot reload in Flutter and how it differs from hot restart. When can you not rely on hot reload and must instead perform a hot restart or full restart?**
 
     Hot Reload injects updated source code files directly into the running Dart Virtual Machine (VM), instantly updating the UI while preserving the app's current state. Hot Restart, on the other hand, completely destroys the app's state and recompile the code from scratch, starting the app back at the default screen. Hot Reload isn't reliable and a Hot or Full Restart is needed when adding new assets, tweaking global variables, editing main(), or pulling in new packages in pubspec.yaml.
+
+### Assignment 8
+
+1. **Differences between `Navigator.push()`, `Navigator.pushReplacement()`, and `Navigator.pop()`:**
+   - **`Navigator.push()`** adds a new route on top of the current navigation stack, keeping the previous screen underneath so the user can return to it.
+   - **`Navigator.pushReplacement()`** removes the current top route from the stack and replaces it with the new route, preventing the stack from growing endlessly when switching top-level screens.
+   - **`Navigator.pop()`** removes the current top route from the stack and returns the user to the route immediately underneath it (or closes a modal/dialog).
+   - **Action card navigation:** Opening the Experience form from the home screen's action card uses **`Navigator.push()`** so the user can return to the dashboard using the system Back button.
+   - **Drawer Home option:** Selecting **Home** in `LeftDrawer` calls **`Navigator.pushReplacement()`** with `MyHomePage()`, replacing the current form screen with the home screen so pressing Back afterward does not bounce the user back into the form.
+
+2. **Consistency via `Scaffold`, `AppBar`, and `Drawer`:**
+   - Wrapping every screen (`MyHomePage`, `ProjectFormPage`, and `ExperienceFormPage`) in a `Scaffold` with a shared `AppBar` structure and the same reusable `LeftDrawer` widget ensures identical top-bar placement, navigation behavior, and visual hierarchy across the app.
+   - **Theme color reuse example:** The portfolio's primary blue (`Color(0xFF0066FF)`, accessed via `Theme.of(context).colorScheme.primary`) is consistently applied to the `AppBar` background on `MyHomePage`, `ProjectFormPage`, and `ExperienceFormPage`, as well as the `DrawerHeader`, the `Save` `ElevatedButton`, and the active `SwitchListTile` / skill `InputChip` accents.
+
+3. **Form layout, spacing, and scrolling:**
+   - The form uses a `SingleChildScrollView` wrapping a `Column` of padded input fields (`TextFormField`, `DropdownButtonFormField`, `SwitchListTile`, `Row` of date picker buttons, and `Wrap` for skill chips) to present fields in a clean, scannable vertical flow.
+   - When screen space is limited—such as on narrow phone screens or when the on-screen keyboard pops up—`SingleChildScrollView` prevents `RenderFlex` overflow errors and lets the user scroll smoothly to reach every input and the **Save** button. Meanwhile, `Padding`, `SizedBox`, and `Wrap` keep touch targets comfortably separated and allow dynamic elements like skill chips to wrap onto new lines without clipping horizontally.
+
+4. **Roles of `GlobalKey<FormState>`, `validator`, and `validate()`:**
+   - **`GlobalKey<FormState>`** (`_formKey`) uniquely identifies the `Form` widget and provides access to its `FormState` from outside the form tree.
+   - **`validator`** is a callback attached to each `TextFormField` that inspects the current input and returns an error string if invalid (or `null` if valid).
+   - **`validate()`** (`_formKey.currentState!.validate()`) triggers every field's `validator` at once when **Save** is pressed, displaying inline error messages next to any failing fields and returning `true` only if all fields pass.
+   - **Example of a rejected value:** Entering only spaces (`"   "`) in the **Role / Position** field is rejected because `value.trim().isEmpty` catches whitespace-only input (and selecting an End Date earlier than the Start Date is rejected by `_validateDates()`). Choosing a specific input widget or keyboard type alone is insufficient because keyboards only hint at input format—users can still leave required fields blank, paste invalid text, enter whitespace, or pick logically invalid date ranges, all of which require explicit validation logic.
+
+## AI Disclosure for Assigment 8
+- **Tools Used:** Gemini.
+- **Prompt Strategy & Assisted Parts:** Used to design `ExperienceFormPage` model fields, scaffold the form layout (`showDatePicker`, `SwitchListTile` for "Currently Working Here", and `InputChip` skill tags), wire up `LeftDrawer` and `ItemCard` navigation.
+- **Limitations & Manual Fixes:** AI-generated Flutter codes can sometimes reference API properties that differ across Flutter SDK versions (things like `activeThumbColor` vs. `activeColor` or `withValues` vs. `withOpacity`) and cannot directly run the app. All navigation flows (action card `push` vs. drawer `pushReplacement`), validation edge cases (empty/whitespace inputs and inverted date ranges), and `flutter analyze` checks were manually tested and verified locally in Chrome and VS Code.
