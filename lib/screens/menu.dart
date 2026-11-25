@@ -35,53 +35,55 @@ class MyHomePage extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       drawer: const LeftDrawer(),
-      body: Padding(
-        padding : const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children:[
-          //Horizontal list of items
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                InfoCard(title: 'NPM', content: npm),
-                InfoCard(title: 'Name', content: name),
-                InfoCard(title: 'Class', content: className),
-            ],
-          ),
-          const SizedBox(height: 16.0),
-          //Centers the interactive grid of portfolio actions
-          Center(
-            child: Column(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding : const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children:[
+            //Horizontal list of items
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 16.0),
-                    child: Text(
-                      'Welcome to MyPortfolio Mobile!',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18.0,
+                  InfoCard(title: 'NPM', content: npm),
+                  InfoCard(title: 'Name', content: name),
+                  InfoCard(title: 'Class', content: className),
+              ],
+            ),
+            const SizedBox(height: 16.0),
+            //Centers the interactive grid of portfolio actions
+            Center(
+              child: Column(
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16.0),
+                      child: Text(
+                        'Welcome to MyPortfolio Mobile!',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18.0,
+                        ),
                       ),
                     ),
-                  ),
-                  GridView.count(
-                    primary: true,
-                    padding: const EdgeInsets.all(20),
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    crossAxisCount: 3,
-                    shrinkWrap: true,// Ensures the grid only takes up necessary space
-                    // Dynamically maps the ItemHomepage data model to visual ItemCard widgets
-                    children: items.map<Widget>((ItemHomepage item) {
-                      return ItemCard(item);
-                    }).toList(),
-                  ),
-                ],
-              ),
+                    GridView.count(
+                      primary: true,
+                      padding: const EdgeInsets.all(20),
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      crossAxisCount: 3,
+                      shrinkWrap: true,// Ensures the grid only takes up necessary space
+                      // Dynamically maps the ItemHomepage data model to visual ItemCard widgets
+                      children: items.map<Widget>((ItemHomepage item) {
+                        return ItemCard(item);
+                      }).toList(),
+                    ),
+                  ],
+                ),
+            )
+            ]
           )
-          ]
         )
-      )
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:myportofolio_mobile/screens/experience_form.dart';
 import 'package:myportofolio_mobile/screens/project_form.dart';
+import 'package:myportofolio_mobile/utils/auth_guard.dart';
 /// [ItemCard] is a reusable, interactive button widget.
 /// 
 /// It wraps an [ItemHomepage] configuration in an [InkWell] to provide 
@@ -17,8 +18,9 @@ class ItemCard extends StatelessWidget {
       color: item.color,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        onTap: () {
+        onTap: () async {
             // Navigate to the appropriate screen
+          
           if (item.name == "Add Project") {
             Navigator.push(
               context,
@@ -27,6 +29,8 @@ class ItemCard extends StatelessWidget {
               ),
             );
           } else if (item.name == "Add Experience") {
+            final ok = await ensureAuthenticated(context);
+            if (!ok || !context.mounted) return;
             Navigator.push(
               context,
               MaterialPageRoute(

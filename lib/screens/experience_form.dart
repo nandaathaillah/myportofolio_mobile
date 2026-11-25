@@ -1,8 +1,12 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:provider/provider.dart';
+import 'package:myportofolio_mobile/models/experience.dart';
+import 'package:myportofolio_mobile/screens/experience_list_screen.dart';
+import 'package:myportofolio_mobile/services/api_client.dart';
+import 'package:myportofolio_mobile/state/auth_state.dart';
+import 'package:myportofolio_mobile/utils/auth_guard.dart';
 import 'package:myportofolio_mobile/widgets/left_drawer.dart';
 
-/// A form screen that allows users to add a new work or organizational
-/// experience entry to their portfolio.
 class ExperienceFormPage extends StatefulWidget {
   const ExperienceFormPage({super.key});
 
@@ -11,6 +15,7 @@ class ExperienceFormPage extends StatefulWidget {
 }
 
 class _ExperienceFormPageState extends State<ExperienceFormPage> {
+  bool _isSubmitting = false;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _skillController = TextEditingController();
 
@@ -30,15 +35,16 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     'Part-time',
     'Internship',
     'Freelance',
-    'Organization',
+    'Research',
+    'Volunteer',
   ];
 
   @override
   void dispose() {
-     super.dispose();
+    _skillController.dispose();
+    super.dispose();
   }
 
-  /// Formats a [DateTime] into `YYYY-MM-DD`, or returns `"Not selected"` if null.
   String _formatDate(DateTime? date) {
     if (date == null) return "Not selected";
     final month = date.month.toString().padLeft(2, '0');
@@ -46,7 +52,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     return "${date.year}-$month-$day";
   }
 
-  /// Opens a calendar modal to select either the start or end date.
   Future<void> _pickDate({required bool isStart}) async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -68,8 +73,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     }
   }
 
-  /// Validates that a start date is chosen and that the end date (if set)
-  /// does not precede the start date.
   bool _validateDates() {
     if (_startDate == null) {
       setState(() => _dateError = "Please select a start date.");
@@ -87,7 +90,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     return true;
   }
 
-  /// Adds a trimmed, non-duplicate skill tag from [_skillController] into [_skills].
   void _addSkill() {
     final skill = _skillController.text.trim();
     if (skill.isEmpty) return;
@@ -106,21 +108,53 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     }
   }
 
-  /// Resets all form fields, date selections, toggles, and skill chips.
-  void _resetForm() {
-    _formKey.currentState!.reset();
-    _skillController.clear();
-    setState(() {
-      _role = "";
-      _company = "";
-      _employmentType = "Internship";
-      _description = "";
-      _startDate = null;
-      _endDate = null;
-      _isCurrentRole = false;
-      _dateError = null;
-      _skills.clear();
-    });
+  Future<void> _submitForm() async {
+    final isFormValid = _formKey.currentState!.validate();
+    final isDateValid = _validateDates();
+    if (!isFormValid || !isDateValid) return;
+
+    final ok = await ensureAuthenticated(context);
+    if (!ok || !mounted) return;
+
+    final token = context.read<AuthState>().token;
+    if (token == null) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final experience = Experience(
+        title: '${_role.trim()} at ${_company.trim()}',
+        description: _description.trim(),
+        category: _employmentType.toLowerCase(),
+        isOngoing: _isCurrentRole,
+      );
+
+      await context.read<ApiClient>().createExperience(
+            experience,
+            token: token,
+          );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Experience saved!')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ExperienceListScreen()),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to connect to server.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -143,7 +177,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // === Role / Position ===
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
@@ -170,8 +203,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   },
                 ),
               ),
-
-              // === Company / Organization ===
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
@@ -195,8 +226,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   },
                 ),
               ),
-
-              // === Employment Type ===
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: DropdownButtonFormField<String>(
@@ -222,8 +251,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   },
                 ),
               ),
-
-              // === Currently Working Here Toggle ===
               SwitchListTile(
                 title: const Text("I currently work here"),
                 value: _isCurrentRole,
@@ -238,8 +265,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   });
                 },
               ),
-
-              // === Start & End Date Pickers ===
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(
@@ -258,8 +283,9 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed:
-                            _isCurrentRole ? null : () => _pickDate(isStart: false),
+                        onPressed: _isCurrentRole
+                            ? null
+                            : () => _pickDate(isStart: false),
                         icon: const Icon(Icons.event),
                         label: Text(
                           _isCurrentRole
@@ -281,8 +307,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                     style: const TextStyle(color: Colors.red, fontSize: 12),
                   ),
                 ),
-
-              // === Interactive Skill Chips ===
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(
@@ -329,8 +353,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                     }).toList(),
                   ),
                 ),
-
-              // === Description ===
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
@@ -355,8 +377,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                   },
                 ),
               ),
-
-              // === Save Button ===
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
@@ -365,52 +385,20 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.all(primaryColor),
                     ),
-                    onPressed: () {
-                      final isFormValid = _formKey.currentState!.validate();
-                      final isDateValid = _validateDates();
-
-                      if (isFormValid && isDateValid) {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Experience added successfully!'),
-                              content: SingleChildScrollView(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Role: $_role'),
-                                    Text('Company: $_company'),
-                                    Text('Type: $_employmentType'),
-                                    Text('Start Date: ${_formatDate(_startDate)}'),
-                                    Text(
-                                      'End Date: ${_isCurrentRole || _endDate == null ? "Present" : _formatDate(_endDate)}',
-                                    ),
-                                    Text(
-                                      'Skills: ${_skills.isEmpty ? "None" : _skills.join(", ")}',
-                                    ),
-                                    Text('Description: $_description'),
-                                  ],
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  child: const Text('OK'),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    _resetForm();
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      }
-                    },
-                    child: const Text(
-                      "Save",
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    onPressed: _isSubmitting ? null : _submitForm,
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            "Save",
+                            style: TextStyle(color: Colors.white),
+                          ),
                   ),
                 ),
               ),
